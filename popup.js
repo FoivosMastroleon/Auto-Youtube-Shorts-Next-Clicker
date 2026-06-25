@@ -70,60 +70,6 @@ document.getElementById("voice-lang").addEventListener("change", (e) => {
 function setVoiceStatus(state, msg = "") {
     const el = document.getElementById("voice-status");
     el.className = "voice-status" + (state === "ok" ? " ok" : state === "err" ? " err" : "");
-    el.textContent = state === "ok" ? "🎙 Ενεργό — πες το trigger word" : msg;
+    el.textContent = state === "ok" ? "🎙 Ενεργό — αν δεν ξεκινά, κλικ στη σελίδα" : msg;
 }
 
-// ── Download ────────────────────────────────────────────────────────────────
-
-const dlBtn    = document.getElementById("download-btn");
-const dlStatus = document.getElementById("dl-status");
-
-dlBtn.addEventListener("click", () => {
-    dlBtn.classList.add("loading");
-    dlStatus.textContent = "";
-    dlStatus.className = "download-status";
-
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-        if (!tab?.id) {
-            setDlState("error", "Δεν βρέθηκε ενεργή καρτέλα.");
-            return;
-        }
-
-        chrome.tabs.sendMessage(tab.id, { type: "download" }, (res) => {
-            if (chrome.runtime.lastError || !res) {
-                setDlState("error", "Άνοιξε πρώτα ένα Reel/Short.");
-                return;
-            }
-            if (!res.ok) {
-                setDlState("error", res.platform === "youtube"
-                    ? "Τα YouTube Shorts δεν υποστηρίζουν άμεση λήψη."
-                    : "Δεν βρέθηκε URL. Κάνε scroll σε ένα reel και ξαναπάτα."
-                );
-                return;
-            }
-            startDownload(res.src);
-        });
-    });
-});
-
-function startDownload(url) {
-    const filename = "reel_" + Date.now() + ".mp4";
-    chrome.downloads.download({ url, filename }, (id) => {
-        if (chrome.runtime.lastError || id === undefined) {
-            setDlState("error", "Αποτυχία λήψης.");
-        } else {
-            setDlState("success", "Η λήψη ξεκίνησε!");
-        }
-    });
-}
-
-function setDlState(state, msg) {
-    dlBtn.classList.remove("loading");
-    dlBtn.className = "download-btn" + (state === "error" ? " error" : state === "success" ? " success" : "");
-    dlStatus.textContent = msg;
-    dlStatus.className = "download-status" + (state === "error" ? " err" : "");
-    if (state !== "error") setTimeout(() => {
-        dlBtn.className = "download-btn";
-        dlStatus.textContent = "";
-    }, 2500);
-}

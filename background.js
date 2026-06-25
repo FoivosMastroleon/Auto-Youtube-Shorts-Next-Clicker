@@ -23,34 +23,6 @@ chrome.storage.onChanged.addListener((changes) => {
     }
 });
 
-// ── Video URL cache ──────────────────────────────────────────────────────────
-
-const tabVideoCache = new Map();
-
-chrome.webRequest.onBeforeRequest.addListener(
-    ({ url, tabId }) => {
-        if (tabId < 0 || !url.split("?")[0].endsWith(".mp4")) return;
-        try {
-            const u = new URL(url);
-            u.searchParams.delete("bytestart");
-            u.searchParams.delete("byteend");
-            tabVideoCache.set(tabId, u.toString());
-        } catch { tabVideoCache.set(tabId, url); }
-    },
-    { urls: ["*://*.cdninstagram.com/*", "*://*.fbcdn.net/*"], types: ["media", "xmlhttprequest", "other"] }
-);
-
-// ── Messages ─────────────────────────────────────────────────────────────────
-
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg.type === "get_cached_video") {
-        sendResponse({ url: tabVideoCache.get(msg.tabId) || null });
-        return true;
-    }
-    if (msg.type === "VOICE_DOWNLOAD") {
-        chrome.downloads.download({ url: msg.url, filename: "reel_" + Date.now() + ".mp4" });
-    }
-});
 
 // ── Content script injection ─────────────────────────────────────────────────
 
